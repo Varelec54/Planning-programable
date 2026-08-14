@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionnaire de Planning Paramétrable</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 20px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a237e;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        select, input, button {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #1a237e;
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #283593;
+        }
+
+        button.btn-secondary {
+            background-color: #5c6bc0;
+        }
+
+        button.btn-outline {
+            background-color: transparent;
+            color: #1a237e;
+            border: 1px solid #1a237e;
+        }
+
+        button.btn-outline:hover {
+            background-color: #e8eaf6;
+        }
+
+        button.btn-danger {
+            background-color: #d32f2f;
+            color: white;
+        }
+
+        button.btn-danger:hover {
+            background-color: #b71c1c;
+        }
+
+        /* Config Panel */
+        #configPanel {
+            display: none;
+            margin-top: 15px;
+            border-top: 2px solid #e8eaf6;
+            padding-top: 15px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .team-names-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
+            background: #fdfdfd;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+
+        .team-name-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+
+        .team-name-item input[type="text"] {
+            width: 100%;
+            padding: 4px 6px;
+            font-size: 13px;
+        }
+
+        .cycle-days-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+            gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+
+        .cycle-day-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: white;
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .cycle-day-item input[type="text"] {
+            width: 100%;
+            padding: 2px 4px;
+            font-size: 12px;
+        }
+
+        .color-picker-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 9px;
+            color: #666;
+        }
+
+        .cycle-day-item input[type="color"] {
+            width: 26px;
+            height: 22px;
+            padding: 0;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        /* Calendrier Grid */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 8px;
+            overflow-x: auto;
+        }
+
+        .month-card {
+            background: white;
+            border: 1px solid #c5cae9;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .month-title {
+            background: #3f51b5;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            padding: 6px;
+            text-transform: capitalize;
+            font-size: 14px;
+        }
+
+        /* En-tête des colonnes d'équipes */
+        .team-header-row {
+            display: grid;
+            background-color: #e8eaf6;
+            border-bottom: 1px solid #c5cae9;
+        }
+
+        .team-header-spacer {
+            border-right: 1px solid #d0d0d0;
+            background-color: #e8eaf6;
+        }
+
+        .team-header-cell {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            padding: 6px 1px;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            border-right: 1px solid #d0d0d0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            height: 65px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a237e;
+        }
+
+        .team-header-cell:last-child {
+            border-right: none;
+        }
+
+        .day-row {
+            display: grid;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 11px;
+            line-height: 20px;
+            text-align: center;
+        }
+
+        .day-num {
+            font-weight: bold;
+            border-right: 1px solid #f0f0f0;
+        }
+
+        .day-name {
+            color: #555;
+            border-right: 1px solid #f0f0f0;
+        }
+
+        .day-off-highlight {
+            color: #d32f2f !important;
+            font-weight: bold !important;
+        }
+
+        .post-code {
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 2px;
+            border-right: 1px solid #f0f0f0;
+        }
+
+        .post-code:last-child {
+            border-right: none;
+        }
+
+        /* Pied de page / Lien Site Web */
+        .footer-link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .footer-link a {
+            color: #1a237e;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .footer-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* IMPRESSION / PDF */
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            h1, .card { 
+                display: none !important; 
+            }
+            body { 
+                margin: 0; 
+                background: white; 
+            }
+            .grid-container { 
+                gap: 3px; 
+            }
+            .month-card { 
+                border: 1px solid #666; 
+            }
+            .month-title {
+                background-color: #3f51b5 !important;
+                color: white !important;
+            }
+            .team-header-row {
+                background-color: #e8eaf6 !important;
+            }
+            .footer-link {
+                margin-top: 10px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Planning Paramétrable</h1>
+
+    <div class="card">
+        <div class="controls">
+            <div class="control-group">
+                <label for="yearSelect">Année :</label>
+                <input type="number" id="yearSelect" value="2026" min="2000" max="2050" style="width: 70px;">
+            </div>
+
+            <div class="control-group">
+                <label for="teamSelect">Affichage :</label>
+                <select id="teamSelect"></select>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-outline" onclick="document.getElementById('importFileInput').click()">📂 Charger .json</button>
+                <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="importConfig(event)">
+                <button class="btn-secondary" onclick="toggleConfig()">⚙️ Réglages</button>
+                <button onclick="window.print()">🖨️ Imprimer / PDF</button>
+            </div>
+        </div>
+
+        <div id="configPanel">
+            <h3>Paramètres de la rotation</h3>
+            <div class="config-grid">
+                <div class="control-group">
+                    <label>Début du cycle :</label>
+                    <input type="date" id="startDateInput" value="2026-01-01">
+                </div>
+                <div class="control-group">
+                    <label>Nombre de jours par cycle :</label>
+                    <input type="number" id="cycleLengthInput" value="7" min="1" max="365" style="width: 60px;">
+                </div>
+                <div class="control-group">
+                    <label>Nombre d'équipes / personnes :</label>
+                    <input type="number" id="nbTeamsInput" value="1" min="1" max="20" style="width: 50px;">
+                </div>
+                <div class="control-group">
+                    <label>Décalage par équipe (jours) :</label>
+                    <input type="number" id="teamShiftInput" value="0" min="0" max="365" style="width: 60px;">
+                </div>
+            </div>
+
+            <label>Noms des équipes / personnes :</label>
+            <div class="team-names-list" id="teamNamesContainer"></div>
+
+            <label>Définition des jours du cycle (Texte et Couleurs Fond / Texte) :</label>
+            <div class="cycle-days-list" id="cycleDaysContainer"></div>
+
+            <div style="margin-top: 15px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-outline" onclick="exportConfig()">💾 Sauvegarder en .json</button>
+                    <button class="btn-danger" onclick="resetToEmpty()">🗑️ Effacer (Planning vide)</button>
+                </div>
+                <button onclick="applySettings()">Appliquer et enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-container" id="calendarGrid"></div>
+
+    <div class="footer-link">
+        Retrouvez les outils et modèles sur le site : <a href="https://planning-poste.pages-perso.free.fr/" target="_blank" rel="noopener">Planning-posté</a>
+    </div>
+
+    <script>
+        function createEmptyConfig() {
+            return {
+                startDateStr: "2026-01-01",
+                cycleLength: 7,
+                nbTeams: 1,
+                teamNames: ["Équipe 1"],
+                teamShift: 0,
+                days: Array.from({ length: 7 }, () => ({ text: "", color: "#ffffff", textColor: "#000000" }))
+            };
+        }
+
+        let config = createEmptyConfig();
+
+        const monthNames = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+        const dayNames = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+
+        function getFrenchHolidays(year) {
+            const holidays = {};
+
+            holidays[`${year}-01-01`] = "Jour de l'An";
+            holidays[`${year}-05-01`] = "Fête du Travail";
+            holidays[`${year}-05-08`] = "Victoire 1945";
+            holidays[`${year}-07-14`] = "Fête Nationale";
+            holidays[`${year}-08-15`] = "Assomption";
+            holidays[`${year}-11-01`] = "Toussaint";
+            holidays[`${year}-11-11`] = "Armistice 1918";
+            holidays[`${year}-12-25`] = "Noël";
+
+            const a = year % 19;
+            const b = Math.floor(year / 100);
+            const c = year % 100;
+            const d = Math.floor(b / 4);
+            const e = b % 4;
+            const f = Math.floor((b + 8) / 25);
+            const g = Math.floor((b - f + 1) / 3);
+            const h = (19 * a + b - d - g + 15) % 30;
+            const i = Math.floor(c / 4);
+            const k = c % 4;
+            const l = (32 + 2 * e + 2 * i - h - k) % 7;
+            const m = Math.floor((a + 11 * h + 22 * l) / 451);
+            const month = Math.floor((h + l - 7 * m + 114) / 31);
+            const day = ((h + l - 7 * m + 114) % 31) + 1;
+
+            const easter = new Date(Date.UTC(year, month - 1, day));
+
+            const easterMonday = new Date(easter);
+            easterMonday.setUTCDate(easter.getUTCDate() + 1);
+            holidays[easterMonday.toISOString().split('T')[0]] = "Lundi de Pâques";
+
+            const ascension = new Date(easter);
+            ascension.setUTCDate(easter.getUTCDate() + 39);
+            holidays[ascension.toISOString().split('T')[0]] = "Ascension";
+
+            const pentecostMonday = new Date(easter);
+            pentecostMonday.setUTCDate(easter.getUTCDate() + 50);
+            holidays[pentecostMonday.toISOString().split('T')[0]] = "Lundi de Pentecôte";
+
+            return holidays;
+        }
+
+        function loadSavedConfig() {
+            const saved = localStorage.getItem('planning_config_v6');
+            if (saved) {
+                try {
+                    config = JSON.parse(saved);
+                } catch (e) {
+                    config = createEmptyConfig();
+                }
+            } else {
+                config = createEmptyConfig();
+            }
+            populateInputsFromConfig();
+        }
+
+        function populateInputsFromConfig() {
+            document.getElementById('startDateInput').value = config.startDateStr || "2026-01-01";
+            document.getElementById('cycleLengthInput').value = config.cycleLength || 7;
+            document.getElementById('nbTeamsInput').value = config.nbTeams || 1;
+            document.getElementById('teamShiftInput').value = config.teamShift || 0;
+            renderTeamNameInputs();
+            renderCycleInputs();
+        }
+
+        function toggleConfig() {
+            const panel = document.getElementById('configPanel');
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function renderTeamNameInputs() {
+            const container = document.getElementById('teamNamesContainer');
+            container.innerHTML = '';
+
+            const nbTeams = parseInt(document.getElementById('nbTeamsInput').value) || config.nbTeams || 1;
+
+            for (let i = 0; i < nbTeams; i++) {
+                const name = (config.teamNames && config.teamNames[i]) ? config.teamNames[i] : `Équipe ${i + 1}`;
+
+                const item = document.createElement('div');
+                item.className = 'team-name-item';
+                item.innerHTML = `
+                    <span>n°${i + 1}:</span>
+                    <input type="text" value="${name}" class="input-team-name" data-index="${i}" placeholder="P. ex. Magasin, Paul...">
+                `;
+                container.appendChild(item);
+            }
+        }
+
+        function renderCycleInputs() {
+            const container = document.getElementById('cycleDaysContainer');
+            container.innerHTML = '';
+
+            const currentLength = parseInt(document.getElementById('cycleLengthInput').value) || config.cycleLength;
+
+            for (let i = 0; i < currentLength; i++) {
+                const dayData = (config.days && config.days[i]) ? config.days[i] : { text: "", color: "#ffffff", textColor: "" };
+                const bgColor = dayData.color || "#ffffff";
+                const txtColor = dayData.textColor || getContrastYIQ(bgColor);
+
+                const item = document.createElement('div');
+                item.className = 'cycle-day-item';
+
+                item.innerHTML = `
+                    <span style="font-weight:bold;">J${i + 1}:</span>
+                    <input type="text" value="${dayData.text}" class="input-day-text" data-index="${i}" placeholder="P. ex. M, A, N">
+                    <div class="color-picker-group">
+                        <span>Fond</span>
+                        <input type="color" value="${bgColor}" class="input-day-color" data-index="${i}" title="Couleur de fond">
+                    </div>
+                    <div class="color-picker-group">
+                        <span>Texte</span>
+                        <input type="color" value="${txtColor}" class="input-day-textcolor" data-index="${i}" title="Couleur du texte">
+                    </div>
+                `;
+
+                container.appendChild(item);
+            }
+        }
+
+        function updateTeamsDropdown() {
+            const teamSelect = document.getElementById('teamSelect');
+            const currentSelected = teamSelect.value;
+            teamSelect.innerHTML = '';
+
+            if (config.nbTeams > 1) {
+                const allOption = document.createElement('option');
+                allOption.value = "ALL";
+                allOption.textContent = "👥 Vue d'ensemble";
+                teamSelect.appendChild(allOption);
+            }
+
+            for (let i = 0; i < config.nbTeams; i++) {
+                const offset = i * config.teamShift;
+                const teamName = (config.teamNames && config.teamNames[i]) ? config.teamNames[i] : `Équipe ${i + 1}`;
+                
+                const option = document.createElement('option');
+                option.value = String(offset);
+                option.textContent = teamName;
+                    
+                teamSelect.appendChild(option);
+            }
+
+            if (currentSelected && teamSelect.querySelector(`option[value="${currentSelected}"]`)) {
+                teamSelect.value = currentSelected;
+            }
+        }
+
+        function applySettings() {
+            config.startDateStr = document.getElementById('startDateInput').value;
+            config.cycleLength = parseInt(document.getElementById('cycleLengthInput').value) || 7;
+            config.nbTeams = parseInt(document.getElementById('nbTeamsInput').value) || 1;
+            config.teamShift = parseInt(document.getElementById('teamShiftInput').value) || 0;
+
+            const teamInputs = document.querySelectorAll('.input-team-name');
+            config.teamNames = [];
+            for (let i = 0; i < config.nbTeams; i++) {
+                const val = teamInputs[i] && teamInputs[i].value.trim() !== "" ? teamInputs[i].value.trim() : `Équipe ${i + 1}`;
+                config.teamNames.push(val);
+            }
+
+            const textInputs = document.querySelectorAll('.input-day-text');
+            const colorInputs = document.querySelectorAll('.input-day-color');
+            const textColorInputs = document.querySelectorAll('.input-day-textcolor');
+
+            config.days = [];
+            for (let i = 0; i < config.cycleLength; i++) {
+                const textVal = textInputs[i] ? textInputs[i].value : "";
+                const colorVal = colorInputs[i] ? colorInputs[i].value : "#ffffff";
+                const textColorVal = textColorInputs[i] ? textColorInputs[i].value : "#000000";
+                
+                config.days.push({
+                    text: textVal,
+                    color: colorVal,
+                    textColor: textColorVal
+                });
+            }
+
+            localStorage.setItem('planning_config_v6', JSON.stringify(config));
+
+            updateTeamsDropdown();
+            generateCalendar();
+            toggleConfig();
+        }
+
+        function resetToEmpty() {
+            if (confirm("Voulez-vous vraiment effacer le planning actuel et repartir d'un planning vide ?")) {
+                localStorage.removeItem('planning_config_v6');
+                config = createEmptyConfig();
+                populateInputsFromConfig();
+                updateTeamsDropdown();
+                generateCalendar();
+            }
+        }
+
+        function exportConfig() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(config, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "planning_config.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importConfig(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    config = JSON.parse(e.target.result);
+                    localStorage.setItem('planning_config_v6', JSON.stringify(config));
+                    populateInputsFromConfig();
+                    updateTeamsDropdown();
+                    generateCalendar();
+                    alert("Fichier .json chargé avec succès !");
+                } catch (err) {
+                    alert("Le fichier sélectionné est invalide.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function generateCalendar() {
+            const year = parseInt(document.getElementById('yearSelect').value);
+            const teamSelectVal = document.getElementById('teamSelect').value;
+            const isAllTeams = (teamSelectVal === "ALL");
+            const singleTeamOffset = isAllTeams ? 0 : (parseInt(teamSelectVal) || 0);
+
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
+
+            const holidays = getFrenchHolidays(year);
+
+            const [sYear, sMonth, sDay] = (config.startDateStr || "2026-01-01").split('-').map(Number);
+            const startUtc = Date.UTC(sYear, sMonth - 1, sDay);
+
+            for (let month = 0; month < 12; month++) {
+                const monthCard = document.createElement('div');
+                monthCard.className = 'month-card';
+
+                const monthTitle = document.createElement('div');
+                monthTitle.className = 'month-title';
+                monthTitle.textContent = monthNames[month];
+                monthCard.appendChild(monthTitle);
+
+                if (isAllTeams) {
+                    const headerRow = document.createElement('div');
+                    headerRow.className = 'team-header-row';
+                    headerRow.style.gridTemplateColumns = `22px 34px repeat(${config.nbTeams}, 1fr)`;
+
+                    const spacer1 = document.createElement('div');
+                    spacer1.className = 'team-header-spacer';
+                    const spacer2 = document.createElement('div');
+                    spacer2.className = 'team-header-spacer';
+
+                    headerRow.appendChild(spacer1);
+                    headerRow.appendChild(spacer2);
+
+                    for (let t = 0; t < config.nbTeams; t++) {
+                        const teamCell = document.createElement('div');
+                        teamCell.className = 'team-header-cell';
+                        const tName = (config.teamNames && config.teamNames[t]) ? config.teamNames[t] : `Équipe ${t + 1}`;
+                        teamCell.textContent = tName;
+                        teamCell.title = tName;
+                        headerRow.appendChild(teamCell);
+                    }
+
+                    monthCard.appendChild(headerRow);
+                }
+
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const currentDate = new Date(year, month, day);
+                    const dayOfWeek = currentDate.getDay();
+                    const currentUtc = Date.UTC(year, month, day);
+                    const diffDays = Math.round((currentUtc - startUtc) / (1000 * 60 * 60 * 24));
+
+                    const dayRow = document.createElement('div');
+                    dayRow.className = 'day-row';
+
+                    if (isAllTeams) {
+                        dayRow.style.gridTemplateColumns = `22px 34px repeat(${config.nbTeams}, 1fr)`;
+                    } else {
+                        dayRow.style.gridTemplateColumns = `22px 36px 1fr`;
+                    }
+
+                    const dayNum = document.createElement('div');
+                    dayNum.className = 'day-num';
+                    dayNum.textContent = String(day).padStart(2, '0');
+
+                    const dateIso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const isHoliday = holidays[dateIso];
+                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+                    const dayName = document.createElement('div');
+                    dayName.className = 'day-name';
+                    
+                    if (isWeekend || isHoliday) {
+                        dayName.classList.add('day-off-highlight');
+                    }
+                    if (isHoliday) {
+                        dayName.title = isHoliday;
+                    }
+
+                    dayName.textContent = dayNames[dayOfWeek];
+                    dayRow.appendChild(dayNum);
+                    dayRow.appendChild(dayName);
+
+                    if (isAllTeams) {
+                        for (let t = 0; t < config.nbTeams; t++) {
+                            const offset = t * config.teamShift;
+                            let cycleIndex = (diffDays - offset) % config.cycleLength;
+                            if (cycleIndex < 0) cycleIndex = (cycleIndex + config.cycleLength) % config.cycleLength;
+
+                            const dayConfig = config.days[cycleIndex] || { text: "", color: "#ffffff", textColor: "#000000" };
+                            const textColor = dayConfig.textColor || getContrastYIQ(dayConfig.color);
+
+                            const teamCell = document.createElement('div');
+                            teamCell.className = 'post-code';
+                            teamCell.textContent = dayConfig.text;
+                            teamCell.style.backgroundColor = dayConfig.color;
+                            teamCell.style.color = textColor;
+                            
+                            const tName = (config.teamNames && config.teamNames[t]) ? config.teamNames[t] : `Équipe ${t + 1}`;
+                            teamCell.title = `${tName} : ${dayConfig.text}`;
+
+                            dayRow.appendChild(teamCell);
+                        }
+                    } else {
+                        let cycleIndex = (diffDays - singleTeamOffset) % config.cycleLength;
+                        if (cycleIndex < 0) cycleIndex = (cycleIndex + config.cycleLength) % config.cycleLength;
+
+                        const dayConfig = config.days[cycleIndex] || { text: "", color: "#ffffff", textColor: "#000000" };
+                        const textColor = dayConfig.textColor || getContrastYIQ(dayConfig.color);
+
+                        const postCell = document.createElement('div');
+                        postCell.className = 'post-code';
+                        postCell.textContent = dayConfig.text;
+                        postCell.style.backgroundColor = dayConfig.color;
+                        postCell.style.color = textColor;
+
+                        dayRow.appendChild(postCell);
+                    }
+
+                    monthCard.appendChild(dayRow);
+                }
+
+                calendarGrid.appendChild(monthCard);
+            }
+        }
+
+        function getContrastYIQ(hexcolor){
+            if (!hexcolor) return '#000000';
+            hexcolor = hexcolor.replace("#", "");
+            if(hexcolor.length === 3) {
+                hexcolor = hexcolor.split('').map(hex => hex + hex).join('');
+            }
+            var r = parseInt(hexcolor.substr(0,2),16);
+            var g = parseInt(hexcolor.substr(2,2),16);
+            var b = parseInt(hexcolor.substr(4,2),16);
+            var yiq = ((r*299)+(g*587)+(b*114))/1000;
+            return (yiq >= 128) ? '#000000' : '#ffffff';
+        }
+
+        // Événements
+        document.getElementById('yearSelect').addEventListener('change', generateCalendar);
+        document.getElementById('teamSelect').addEventListener('change', generateCalendar);
+        document.getElementById('cycleLengthInput').addEventListener('input', () => {
+            renderCycleInputs();
+        });
+        document.getElementById('nbTeamsInput').addEventListener('input', () => {
+            renderTeamNameInputs();
+        });
+
+        // Initialisation
+        loadSavedConfig();
+        updateTeamsDropdown();
+        generateCalendar();
+    </script>
+</body>
+</html>
